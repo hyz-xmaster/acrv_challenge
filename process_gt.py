@@ -34,28 +34,29 @@ def link_bbox_instance(instances, bbox, class_index):
     return argmax_instance_id, instance_pixels, new_bbox
 
 
-gt_root_dir = '/home/wind/Data/Isaac_sim/AIUE_V01_001'
+gt_root_dir = '/home/wind/Data/Isaac_sim/AIUE_V01_001/demo'
 sequence_names = ['000001']
 for sequence_name in sequence_names:
-    gt_label_dir = os.path.join(gt_root_dir, sequence_name, 'ground_truth')
+    gt_dir = os.path.join(gt_root_dir, 'ground_truth')
+    gt_label_dir = os.path.join(gt_dir, 'label_raw', sequence_name)
 
     # save single refined ground truth in the ground_truth_refined folder
-    gt_label_refined_dir = os.path.join(gt_root_dir, sequence_name, 'ground_truth_refined')
+    gt_label_refined_dir = os.path.join(gt_dir, 'label', sequence_name,)
     if not os.path.isdir(gt_label_refined_dir):
         os.makedirs(gt_label_refined_dir)
 
-    gt_seg_dir = os.path.join(gt_root_dir, sequence_name, 'seg')
-    gt_instance_dir = os.path.join(gt_root_dir, sequence_name, 'instance')
+    gt_seg_dir = os.path.join(gt_dir, 'seg', sequence_name)
+    gt_instance_dir = os.path.join(gt_dir, 'instance', sequence_name)
 
     # label_index file stores the class names and their indexes
-    label_index_file = os.path.join(gt_label_dir, 'label_index.json')
+    label_index_file = os.path.join(gt_dir, 'label_index.json')
     with open(label_index_file, 'r') as f:
         label_index = json.load(f)
     # reverse the label and index for later use
     index_label = {index: label for label, index in label_index.items()}
 
     # the object class index range that excludes those stuff classes
-    class_index_range = np.array([label_index['bottle'], label_index['person']]) + 1
+    class_index_range = np.array([label_index['bottle'], label_index['person']])
 
     ground_truths = {}
     for root, _, gt_names in sorted(os.walk(gt_instance_dir)):
@@ -102,9 +103,7 @@ for sequence_name in sequence_names:
                 # if the object only has pixels in a row or a column, remove it
                 if bbox[0] == bbox[2] or bbox[1] == bbox[3]:
                     continue
-                # get the current object's class index, be aware that the class in the label_index file is stored from 0
-                # so add 1 to the number
-                class_index = label_index[instance_class] + 1
+                class_index = label_index[instance_class]
 
                 # for each object bounding box, link it to one instance in the instance segmentation map by searching
                 # the instance id that appears mostly in that bounding box and has the same class with the bounding box
@@ -112,16 +111,20 @@ for sequence_name in sequence_names:
                 # into the image plane by computing the tightest box enclosing the instance
                 argmax_instance_id, instance_pixels, new_bbox = link_bbox_instance(instances, bbox, class_index)
                 # if the found instance id is 0 (background), then exclude this object
-                if argmax_instance_id == 0 or instance_class != index_label[argmax_instance_id // 1000 - 1]:
+                if argmax_instance_id == 0 or instance_class != index_label[argmax_instance_id // 1000 ]:
                     continue
 
                 label["mask_id"] = int(argmax_instance_id)
                 label["bounding_box"] = new_bbox.tolist()
                 label["num_pixels"] = int(instance_pixels)
                 label['class'] = instance_class
-                label['coarse_bbox'] = label.pop('bbox')
+                label['raw_bbox'] = label.pop('bbox')
+                labels_refined.append(label.copy())
+                ground_truth['pose_rotation'] = label.pop('pose_rotation')
+                ground_truth['pose_translation'] = label.pop('pose_translation')
+                ground_truth['pose'] = label.pop('pose')
                 ground_truth[str(argmax_instance_id)] = label
-                labels_refined.append(label)
+                # labels_refined.append(label)
 
                 # seg_ids = segs[bbox[1]:bbox[3]][:, bbox[0]:bbox[2]]
                 # instances = cv2.rectangle(instances, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (255, 0, 0), 2)
@@ -135,7 +138,7 @@ for sequence_name in sequence_names:
             with open(label_refined_file, 'w') as f:
                 json.dump(labels_refined, f)
             ground_truths[gt_name_] = ground_truth
-    gt_save_name = os.path.join(gt_root_dir, sequence_name, 'labels.json')
+    gt_save_name = os.path.join(gt_label_refined_dir, 'labels.json')
     with open(gt_save_name, 'w') as f:
         json.dump(ground_truths, f)
     print('end')

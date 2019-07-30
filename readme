@@ -1,0 +1,103 @@
+
+Data Format Description
+=======================
+
+The sub-folders of the data are structured as follows:
+
+  - rgb/xxxxxx(sequence)/    contains the left color camera images (png)
+  - rgb_right/xxxxxx(sequence)/    contains the right color camera images (png)
+  - depth/xxxxxx(sequence)/    contains the left depth camera images (uint16 png). This depth image values should be divided by 255.0 to get the actual depth which is in cm
+  - time_stamp/xxxxxx(sequence)/time_stamp.json    contains the acquisition time of each frame data and it is in second
+  - wheel_odometry/xxxxxx(sequence)/    contains the robot wheel odometry information
+  - calibration.json    contains the camera and robot calibration information
+
+  - ground_truth/instance/xxxxxx(sequence)/    contains the instance segmentation annotations (uint16 png)
+  - ground_truth/segmentation/xxxxxx(sequence)/    contains the semantic segmentation annotations (uint8 png)
+  - ground_truth/label/xxxxxx(sequence)/labels.json    contains ground truth information for this sequence
+  - ground_truth/label_index.json    contains the mapping from segmentation class names to index
+
+
+
+Coordinate Systems
+==================
+
+camera: x - right, y - up, z - forward, fixed on the robot
+robot:  x - forward, y - left, z - up
+world:  z - up
+
+
+
+Wheel Odometry
+==============
+
+Wheel odometry information represents the pose of the robot in the world frame and can be used to compute the transformation matrix that transforms one point in the robot coordinate
+system to the world coordinate system. Please refer to the function: acrv.compute_world_T_robot(wheel_odometry[0]['pose_rotation'], wheel_odometry[0]['pose_translation']).
+
+Name 					Description
+-----------------------------------------------------------
+name 					'carter_1', the name of the robot
+pose_rotation       	[w, x, y, z], a quaternion represents a rotation of the robot frame w.r.t the world frame
+pose_translation    	[x, y, z], the translation of the robot frame w.r.t the world frame, note that these values are in meter
+linear_velocity     	The linear velocity in the reference coordinate frame
+angular_velocity     	The angular velocity as a Rodrigues vector in the reference coordinate frame. 
+		 				This means the vector's direction is the axis of rotation and its length is the angular speed around that axis.
+linear_acceleration 	The robot base linear acceleration
+angular_acceleration	The robot base angular acceleration
+
+
+
+Calibration
+===========
+
+Name 									Description
+-----------------------------------------------------------
+projection_matrix						4 x 4 matrix that can project one point (in cm) in the left camera coordinate system into the image plane
+projection_matrix_right 				4 x 4 matrix that can project one point (in cm) in the left camera coordinate system into the right camera image plane
+camera_pose_in_world.pose_rotation  	[yaw, pitch, roll] (degree), represents the rotation of the camera coordinate system w.r.t the world coordinate system in the first frame
+camera_pose_in_world.pose_translation 	[tr_x, tr_y, tr_z] (cm), the location of the camera origin in the world coordinate system in the first frame
+robot_pose_in_world.pose_rotation		[quat_w, quat_x, quat_y, quat_z], a quaternion that represents the rotation of the robot coordinate system w.r.t the world coordinate system in the first frame
+robot_pose_in_world.pose_translation   	[tr_x, tr_y, tr_z] (cm), the location of the robot origin in the world coordinate system in the first frame
+camera_pose_in_robot.pose_rotation		[quat_w, quat_x, quat_y, quat_z], a quaternion that 'partly' represents the rotation of the camera coordinate system w.r.t the robot coordinate system
+camera_pose_in_robot.pose_translation   [tr_x, tr_y, tr_z] (cm), the location of camera origin in the robot coordinate system
+camera_pose_in_robot_right				[quat_w, quat_x, quat_y, quat_z] and [tr_x, tr_y, tr_z] (cm) for right camera in the robot coordinate system
+stereo_baseline							the baseline length (cm) between the left color camera and the right color camera
+
+For projecting one point in the camera coordinate system, please refer to the function: acrv.project_camera_to_image(projection_matrix, point_3d)
+
+For computing the transformation matrix that transforms one point in the world coordinate into the camera coordinate, please refer to the function: acrv.compute_camera_T_world(camera_pose_rotation, camera_pose_translation). This function can be used with acrv.project_camera_to_image() to plot 3D bounding boxes of objects in the world on the image.
+
+For computing the transformation matrix that transforms one point in the robot coordinate system to the world coordinate system, please refer to acrv.compute_world_T_robot(robot_pose_rotation, robot_pose_translation)
+
+For computing the transformation matrix that transforms one point in the camera coordinate into the robot coordinate, please refer to the function: acrv.compute_robot_T_camera(camera_pose_roation, camera_pose_translation)
+
+
+
+labels
+======
+
+Name 							Description
+-----------------------------------------------------------
+00000000						frame name, this key indexes all the ground truth for this frame
+_metadata.mask_name				the instance segmentation annotation file name, it is also the semantic segmentation annotation image name
+pose_rotation 					[yaw, pitch, roll] (degree), the camera rotation of this frame w.r.t the world coordinate system
+pose_translation 				[tr_x, tr_y, tr_z] (cm), the camera location of this frame in the world coordinate system
+pose 							3 x 4 matrix stored in row aligned order, represents the camera pose w.r.t the first camera coordinate system, taking a point in the i'th coordinate 
+								system and projecting it into the first (=0th) coordinate system
+
+xxyyy							this sub-key indexes the ground truth for one object instance, xx indicates the object class and yyy means the instance number of this class
+class							class name of this object instance
+ID_name							the unique ID of this object instance, it is derived from the mesh name used in Unreal Engine
+occlusion_ratio					occlusion ratio
+origin_in_world					[x, y, z], the center of the 3D bounding box of this object instance in the world coordinate system
+extent_in_world					[x, y, z], the half dimensions of the 3D bounding box of this object instance in the world coordinate system
+origin_in_camera				[x, y, z], the center of the 3D bounding box of this object instance in the camera coordinate system
+extent_in_camera				[x, y, z], the half dimensions of the 3D bounding box of this object instance in the camera coordinate system
+mask_id							the id of this object instance in the instance segmentation annotation image
+bounding_box					[x1, y1, x2, y2], the 2D bounding box corners of the object in the image
+num_pixels						the area of the object instance in the image
+raw_bbox						the original 2D bounding box originally output from the Isaac Sim, not very precise, can be ignored
+
+
+
+
+
