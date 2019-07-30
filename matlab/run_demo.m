@@ -1,5 +1,3 @@
-% KITTI OBJECT DETECTION AND ORIENTATION ESTIMATION BENCHMARK DEMONSTRATION
-% 
 % This tool displays the images and the object labels for the benchmark and
 % provides an entry point for writing your own interface to the data set.
 % Before running this tool, set root_dir to the directory where you have
@@ -113,8 +111,8 @@ while 1
   switch lower(key)                         
     case 'q',  break;                                 % quit
     case '-',  img_idx = max(img_idx-1,  0);          % previous frame
-    case 'x',  img_idx = min(img_idx+10, nimages-1); % +100 frames
-    case 'y',  img_idx = max(img_idx-10, 0);         % -100 frames
+    case 'x',  img_idx = min(img_idx+10, nimages-1); % +10 frames
+    case 'y',  img_idx = max(img_idx-10, 0);         % -10 frames
     otherwise, img_idx = min(img_idx+1,  nimages-1);  % next frame
   end
 
