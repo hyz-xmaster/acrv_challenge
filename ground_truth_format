@@ -9,7 +9,7 @@ The sub-folders of the data are structured as follows:
   - depth/xxxxxx(sequence)/    contains the left depth camera images (uint16 png). This depth image values should be divided by 255.0 to get the actual depth which is in cm
   - time_stamp/xxxxxx(sequence)/time_stamp.json    contains the acquisition time of each frame data and it is in second
   - wheel_odometry/xxxxxx(sequence)/    contains the robot wheel odometry information
-  - calibration.json    contains the camera and robot calibration information
+  - calibration/xxxxxx(sequence)/calibration.json    contains the camera and robot calibration information for that sequence
 
   - ground_truth/instance/xxxxxx(sequence)/    contains the instance segmentation annotations (uint16 png)
   - ground_truth/segmentation/xxxxxx(sequence)/    contains the semantic segmentation annotations (uint8 png)
@@ -37,7 +37,7 @@ Name 					Description
 -----------------------------------------------------------
 name 					'carter_1', the name of the robot
 pose_rotation       	[w, x, y, z], a quaternion represents a rotation of the robot frame w.r.t the world frame
-pose_translation    	[x, y, z], the translation of the robot frame w.r.t the world frame, note that these values are in meter
+pose_translation    	[x, y, z], the translation of the robot frame w.r.t the world frame, note that these values are in centimeter
 linear_velocity     	The linear velocity in the reference coordinate frame
 angular_velocity     	The angular velocity as a Rodrigues vector in the reference coordinate frame. 
 		 				This means the vector's direction is the axis of rotation and its length is the angular speed around that axis.
@@ -88,10 +88,10 @@ xxyyy							this sub-key indexes the ground truth for one object instance, xx in
 class							class name of this object instance
 ID_name							the unique ID of this object instance, it is derived from the mesh name used in Unreal Engine
 occlusion_ratio					occlusion ratio
-origin_in_world					[x, y, z], the center of the 3D bounding box of this object instance in the world coordinate system
-extent_in_world					[x, y, z], the half dimensions of the 3D bounding box of this object instance in the world coordinate system
-origin_in_camera				[x, y, z], the center of the 3D bounding box of this object instance in the camera coordinate system
-extent_in_camera				[x, y, z], the half dimensions of the 3D bounding box of this object instance in the camera coordinate system
+origin_in_world					[x, y, z] (cm), the center of the 3D bounding box of this object instance in the world coordinate system
+extent_in_world					[x, y, z] (cm), the half dimensions of the 3D bounding box of this object instance in the world coordinate system
+origin_in_camera				[x, y, z] (cm), the center of the 3D bounding box of this object instance in the camera coordinate system
+extent_in_camera				[x, y, z] (cm), the half dimensions of the 3D bounding box of this object instance in the camera coordinate system
 mask_id							the id of this object instance in the instance segmentation annotation image
 bounding_box					[x1, y1, x2, y2], the 2D bounding box corners of the object in the image
 num_pixels						the area of the object instance in the image
